@@ -358,19 +358,12 @@ function renderBoard() {
 function renderFoundList() {
   elements.foundList.innerHTML = "";
 
-  for (let index = 0; index < ROUND_SIZE; index += 1) {
+  for (const pokemonId of state.round.pokemonIds) {
     const slot = document.createElement("div");
-    const pokemonId = state.round.foundOrder[index];
-
-    if (!pokemonId) {
-      slot.className = "sprite-slot empty";
-      slot.setAttribute("aria-label", `Hidden Pokemon slot ${index + 1}`);
-      elements.foundList.appendChild(slot);
-      continue;
-    }
-
     const pokemon = pokemonById.get(pokemonId);
-    slot.className = "sprite-slot";
+    const found = state.round.foundIds.includes(pokemonId);
+    slot.className = found ? "sprite-slot" : "sprite-slot unfound";
+    slot.setAttribute("aria-label", found ? `${pokemon.name} found` : `${pokemon.name} not found`);
 
     const sprite = document.createElement("img");
     sprite.className = "pokemon-sprite";

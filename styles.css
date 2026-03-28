@@ -221,16 +221,8 @@ button:hover {
   background: rgba(255, 251, 242, 0.8);
 }
 
-.sprite-slot.empty {
-  background: rgba(255, 251, 242, 0.5);
-}
-
-.sprite-slot.empty::before {
-  content: "";
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  border: 2px solid rgba(43, 58, 33, 0.22);
+.sprite-slot.unfound {
+  background: rgba(255, 251, 242, 0.56);
 }
 
 .pokemon-sprite {
@@ -240,6 +232,10 @@ button:hover {
   max-height: 56px;
   object-fit: contain;
   image-rendering: pixelated;
+}
+
+.sprite-slot.unfound .pokemon-sprite {
+  filter: grayscale(1) opacity(0.55);
 }
 
 .overlay {
