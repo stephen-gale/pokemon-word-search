@@ -83,11 +83,7 @@ applyCompletionState();
 document.addEventListener("pointerdown", handleFirstInteraction, { once: false });
 document.addEventListener("keydown", handleFirstInteraction, { once: false });
 document.addEventListener("pointermove", handlePointerMove);
-document.addEventListener("pointerup", () => {
-  if (pointerDown && activeSelection) {
-    commitSelection();
-  }
-});
+document.addEventListener("pointerup", handleDocumentPointerUp);
 
 elements.menuButton.addEventListener("click", () => setMenuOpen(true));
 elements.closeMenuButton.addEventListener("click", () => setMenuOpen(false));
@@ -472,13 +468,8 @@ function handlePointerMove(event) {
     return;
   }
 
-  const target = document.elementFromPoint(event.clientX, event.clientY);
-  if (!(target instanceof HTMLElement)) {
-    return;
-  }
-
-  const cell = target.closest(".cell");
-  if (!(cell instanceof HTMLElement)) {
+  const cell = getCellFromPoint(event.clientX, event.clientY);
+  if (!cell) {
     return;
   }
 
@@ -489,7 +480,19 @@ function handlePointerUp(event) {
   if (!(event.currentTarget instanceof HTMLElement) || !pointerDown || !activeSelection) {
     return;
   }
-  updateSelection(Number(event.currentTarget.dataset.row), Number(event.currentTarget.dataset.col));
+  commitSelection();
+}
+
+function handleDocumentPointerUp(event) {
+  if (!pointerDown || !activeSelection || event.pointerId !== activePointerId) {
+    return;
+  }
+
+  const cell = getCellFromPoint(event.clientX, event.clientY);
+  if (cell) {
+    updateSelection(Number(cell.dataset.row), Number(cell.dataset.col));
+  }
+
   commitSelection();
 }
 
@@ -501,6 +504,16 @@ function updateSelection(row, col) {
   }
   activeSelection.cells = nextCells;
   renderBoard();
+}
+
+function getCellFromPoint(clientX, clientY) {
+  const target = document.elementFromPoint(clientX, clientY);
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  const cell = target.closest(".cell");
+  return cell instanceof HTMLElement ? cell : null;
 }
 
 function buildPath(start, end) {
