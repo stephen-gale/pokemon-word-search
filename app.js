@@ -66,11 +66,13 @@ const elements = {
 let state = loadState();
 let activeSelection = null;
 let pointerDown = false;
+let activePointerId = null;
 let currentCry = null;
 let currentCelebration = null;
 let bgMusic = null;
 let hasUserInteracted = false;
 let fadeTimer = null;
+let boardCells = [];
 
 render();
 syncAudioControls();
@@ -78,6 +80,7 @@ applyCompletionState();
 
 document.addEventListener("pointerdown", handleFirstInteraction, { once: false });
 document.addEventListener("keydown", handleFirstInteraction, { once: false });
+document.addEventListener("pointermove", handlePointerMove);
 document.addEventListener("pointerup", () => {
   if (pointerDown && activeSelection) {
     commitSelection();
@@ -327,31 +330,35 @@ function renderBoard() {
   );
   const previewCells = new Set((activeSelection?.cells || []).map(([row, col]) => `${row}:${col}`));
 
-  elements.board.innerHTML = "";
+  if (boardCells.length !== GRID_SIZE * GRID_SIZE) {
+    elements.board.innerHTML = "";
+    boardCells = [];
 
-  state.round.grid.forEach((row, rowIndex) => {
-    row.forEach((letter, colIndex) => {
-      const cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "cell";
-      cell.textContent = letter;
-      cell.dataset.row = String(rowIndex);
-      cell.dataset.col = String(colIndex);
-      cell.setAttribute("aria-label", `Row ${rowIndex + 1} column ${colIndex + 1} ${letter}`);
-
-      const key = `${rowIndex}:${colIndex}`;
-      if (foundCells.has(key)) {
-        cell.classList.add("found");
-      }
-      if (previewCells.has(key)) {
-        cell.classList.add("preview");
-      }
-
-      cell.addEventListener("pointerdown", handlePointerDown);
-      cell.addEventListener("pointerenter", handlePointerEnter);
-      cell.addEventListener("pointerup", handlePointerUp);
-      elements.board.appendChild(cell);
+    state.round.grid.forEach((row, rowIndex) => {
+      row.forEach((letter, colIndex) => {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cell";
+        cell.dataset.row = String(rowIndex);
+        cell.dataset.col = String(colIndex);
+        cell.addEventListener("pointerdown", handlePointerDown);
+        cell.addEventListener("pointerenter", handlePointerEnter);
+        cell.addEventListener("pointerup", handlePointerUp);
+        elements.board.appendChild(cell);
+        boardCells.push(cell);
+      });
     });
+  }
+
+  boardCells.forEach((cell) => {
+    const row = Number(cell.dataset.row);
+    const col = Number(cell.dataset.col);
+    const letter = state.round.grid[row][col];
+    const key = `${row}:${col}`;
+    cell.textContent = letter;
+    cell.setAttribute("aria-label", `Row ${row + 1} column ${col + 1} ${letter}`);
+    cell.classList.toggle("found", foundCells.has(key));
+    cell.classList.toggle("preview", previewCells.has(key));
   });
 }
 
@@ -386,6 +393,8 @@ function handlePointerDown(event) {
   }
   handleFirstInteraction();
   pointerDown = true;
+  activePointerId = event.pointerId;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
   const row = Number(event.currentTarget.dataset.row);
   const col = Number(event.currentTarget.dataset.col);
   activeSelection = { start: [row, col], cells: [[row, col]] };
@@ -399,6 +408,24 @@ function handlePointerEnter(event) {
   updateSelection(Number(event.currentTarget.dataset.row), Number(event.currentTarget.dataset.col));
 }
 
+function handlePointerMove(event) {
+  if (!pointerDown || !activeSelection || event.pointerId !== activePointerId) {
+    return;
+  }
+
+  const target = document.elementFromPoint(event.clientX, event.clientY);
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const cell = target.closest(".cell");
+  if (!(cell instanceof HTMLElement)) {
+    return;
+  }
+
+  updateSelection(Number(cell.dataset.row), Number(cell.dataset.col));
+}
+
 function handlePointerUp(event) {
   if (!(event.currentTarget instanceof HTMLElement) || !pointerDown || !activeSelection) {
     return;
@@ -409,7 +436,11 @@ function handlePointerUp(event) {
 
 function updateSelection(row, col) {
   const path = buildPath(activeSelection.start, [row, col]);
-  activeSelection.cells = path || [activeSelection.start];
+  const nextCells = path || [activeSelection.start];
+  if (sameCells(activeSelection.cells, nextCells)) {
+    return;
+  }
+  activeSelection.cells = nextCells;
   renderBoard();
 }
 
@@ -438,6 +469,7 @@ function buildPath(start, end) {
 function commitSelection() {
   const selectedCells = activeSelection?.cells || [];
   pointerDown = false;
+  activePointerId = null;
   activeSelection = null;
 
   if (!selectedCells.length) {
@@ -495,8 +527,10 @@ function startNewRound() {
   stopCry();
   stopCelebration();
   stopMusic();
+  boardCells = [];
   activeSelection = null;
   pointerDown = false;
+  activePointerId = null;
   state.round = generateRound();
   setMenuOpen(false);
   render();
@@ -509,6 +543,7 @@ function resetRound() {
   stopCelebration();
   activeSelection = null;
   pointerDown = false;
+  activePointerId = null;
   state.round.foundIds = [];
   state.round.foundOrder = [];
   state.round.completed = false;
