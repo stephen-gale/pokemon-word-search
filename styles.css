@@ -215,7 +215,7 @@ button:hover {
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  padding: 8px;
+  padding: 1px;
   border-radius: 14px;
   border: 2px solid rgba(43, 58, 33, 0.18);
   background: rgba(255, 251, 242, 0.8);
@@ -226,10 +226,8 @@ button:hover {
 }
 
 .pokemon-sprite {
-  width: 100%;
-  height: 100%;
-  max-width: 76px;
-  max-height: 76px;
+  width: min(100%, 148px);
+  height: min(100%, 148px);
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -394,11 +392,11 @@ button:hover {
   }
 
   .sprite-slot {
-    padding: 10px;
+    padding: 1px;
   }
 
   .pokemon-sprite {
-    max-width: 88px;
-    max-height: 88px;
+    width: min(100%, 156px);
+    height: min(100%, 156px);
   }
 }
