@@ -368,7 +368,9 @@ function render() {
 }
 
 function renderCounter() {
-  elements.counter.textContent = `${state.round.foundIds.length} / ${ROUND_SIZE}`;
+  if (elements.counter) {
+    elements.counter.textContent = `${state.round.foundIds.length} / ${ROUND_SIZE}`;
+  }
 }
 
 function renderBoard() {
