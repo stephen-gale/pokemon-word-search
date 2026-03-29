@@ -152,14 +152,14 @@ button:hover {
 
 .layout {
   display: grid;
-  gap: 18px;
-  margin-top: 18px;
+  gap: 14px;
+  margin-top: 12px;
 }
 
 .panel {
   border: 1px solid var(--line);
   border-radius: 24px;
-  padding: 20px;
+  padding: 12px;
   background: rgba(255, 250, 240, 0.88);
 }
 
@@ -167,12 +167,12 @@ button:hover {
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   grid-template-rows: repeat(10, minmax(0, 1fr));
-  gap: 4px;
+  gap: 1px;
   width: 100%;
   height: min(88vw, 520px);
   min-height: 300px;
-  padding: 10px;
-  border-radius: 18px;
+  padding: 2px;
+  border-radius: 14px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 247, 222, 0.95)),
     linear-gradient(135deg, rgba(243, 193, 75, 0.18), rgba(141, 175, 99, 0.16));
@@ -184,13 +184,13 @@ button:hover {
   min-height: 0;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(40, 40, 40, 0.06);
   background: rgba(255, 252, 244, 0.92);
   color: var(--ink);
-  font-size: clamp(0.88rem, 1.7vw, 1.08rem);
+  font-size: clamp(1.12rem, 2.6vw, 1.48rem);
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
@@ -208,7 +208,7 @@ button:hover {
 .found-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .sprite-slot {
@@ -228,8 +228,8 @@ button:hover {
 .pokemon-sprite {
   width: 100%;
   height: 100%;
-  max-width: 56px;
-  max-height: 56px;
+  max-width: 76px;
+  max-height: 76px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -358,6 +358,10 @@ button:hover {
   .layout {
     grid-template-columns: minmax(0, 1.8fr) minmax(220px, 0.7fr);
   }
+
+  .found-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -369,18 +373,32 @@ button:hover {
   .topbar,
   .panel {
     border-radius: 20px;
-    padding: 16px;
+    padding: 10px;
   }
 
   .board {
-    gap: 3px;
-    padding: 6px;
+    gap: 1px;
+    padding: 2px;
     height: min(92vw, 420px);
     min-height: 280px;
   }
 
   .cell {
-    border-radius: 8px;
-    font-size: 0.82rem;
+    border-radius: 7px;
+    font-size: clamp(1.2rem, 4.3vw, 1.55rem);
+  }
+
+  .found-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .sprite-slot {
+    padding: 10px;
+  }
+
+  .pokemon-sprite {
+    max-width: 88px;
+    max-height: 88px;
   }
 }

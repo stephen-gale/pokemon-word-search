@@ -1,5 +1,5 @@
 const GRID_SIZE = 10;
-const ROUND_SIZE = 5;
+const ROUND_SIZE = 4;
 const SAVE_KEY = "pokemon-word-search-state-v1";
 const MUSIC_FILE = "music-palettetown.mp3";
 const CELEBRATION_FILE = "celebration.mp3";

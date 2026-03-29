@@ -2,19 +2,19 @@
 
 ## 1. Core Gameplay
 
-- Each round contains exactly 5 random Pokemon from Generation 1.
+- Each round contains exactly 4 random Pokemon from Generation 1.
 - Only Generation 1 Pokemon (National Dex #1-151) are used.
 - Each selected Pokemon appears exactly once in the puzzle.
-- The puzzle is a word search grid containing all 5 selected Pokemon names.
+- The puzzle is a word search grid containing all 4 selected Pokemon names.
 - Empty grid spaces are filled with random letters.
-- The round is complete when all 5 Pokemon have been found.
+- The round is complete when all 4 Pokemon have been found.
 
 ### Word Placement Rules
 
 - Pokemon names may be placed horizontally, vertically, or diagonally.
 - Names may appear forwards or backwards.
 - Words may overlap only when overlapping letters are identical.
-- All 5 selected Pokemon must be successfully placed before the round begins.
+- All 4 selected Pokemon must be successfully placed before the round begins.
 - If puzzle generation fails, the board must regenerate until a valid puzzle is created.
 
 ### Name Normalization Rules
@@ -60,15 +60,15 @@ When a valid Pokemon is found:
 
 ## 3. Counter System
 
-- Counter displays as `X / 5`.
+- Counter displays as `X / 4`.
 - `X` is the number of Pokemon found in the current round.
 - The counter updates immediately when a Pokemon is found.
-- The counter resets to `0 / 5` on a new round or reset.
+- The counter resets to `0 / 4` on a new round or reset.
 
 ## 4. Found Pokemon Display
 
 - A reveal area appears below the board.
-- It shows 5 placeholder slots by default.
+- It shows 4 round sprites by default.
 - Found Pokemon remain hidden until discovered.
 - Each found Pokemon replaces one placeholder with its sprite.
 - Found Pokemon remain visible for the duration of the round.
@@ -103,8 +103,8 @@ When a valid Pokemon is found:
 
 ## 7. Round Completion
 
-- A round is complete when all 5 Pokemon have been found.
-- Completion is recognized immediately after the 5th correct find.
+- A round is complete when all 4 Pokemon have been found.
+- Completion is recognized immediately after the 4th correct find.
 - The Rounds Completed counter increments by 1.
 - A completion dialog is shown.
 - Completion celebration audio plays once.
@@ -113,11 +113,11 @@ When a valid Pokemon is found:
 
 ## 8. New Round System
 
-- New Round generates 5 new random Gen 1 Pokemon, a new valid grid, an empty reveal list, and a reset counter of `0 / 5`.
+- New Round generates 4 new random Gen 1 Pokemon, a new valid grid, an empty reveal list, and a reset counter of `0 / 4`.
 
 ## 9. Reset System
 
-- Reset keeps the same 5 Pokemon and same generated grid.
+- Reset keeps the same 4 Pokemon and same generated grid.
 - All found progress is cleared.
 - Reveal slots reset to empty.
 - The counter resets to `0 / 5`.
