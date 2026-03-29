@@ -67,6 +67,8 @@ let state = loadState();
 let activeSelection = null;
 let pointerDown = false;
 let activePointerId = null;
+let highlightedPokemonId = null;
+let highlightTimer = null;
 let currentCry = null;
 let currentCelebration = null;
 let bgMusic = null;
@@ -153,14 +155,32 @@ function loadState() {
     if (!parsed || typeof parsed !== "object" || !parsed.round) {
       return createInitialState();
     }
+    const round = hydrateRound(parsed.round);
     return {
       roundsCompleted: Number.isInteger(parsed.roundsCompleted) ? parsed.roundsCompleted : 0,
+      usedPokemonIds: normalizeUsedPokemonIds(parsed.usedPokemonIds, round.pokemonIds),
       preferences: normalizePreferences(parsed.preferences),
-      round: hydrateRound(parsed.round)
+      round
     };
   } catch {
     return createInitialState();
   }
+}
+
+function normalizeUsedPokemonIds(value, currentRoundIds = []) {
+  const validIds = Array.isArray(value) ? value.filter((id) => pokemonById.has(id)) : [];
+  const seen = new Set();
+  const ordered = [];
+
+  [...validIds, ...currentRoundIds].forEach((id) => {
+    if (seen.has(id)) {
+      return;
+    }
+    seen.add(id);
+    ordered.push(id);
+  });
+
+  return ordered;
 }
 
 function hydrateRound(round) {
@@ -197,10 +217,12 @@ function hydratePlacement(placement) {
 }
 
 function createInitialState() {
+  const { round, nextUsedPokemonIds } = buildRound();
   return {
     roundsCompleted: 0,
     preferences: normalizePreferences(),
-    round: generateRound()
+    usedPokemonIds: nextUsedPokemonIds,
+    round
   };
 }
 
@@ -208,19 +230,50 @@ function saveState() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(state));
 }
 
-function generateRound() {
-  const selected = shuffle([...GEN1_POKEMON]).slice(0, ROUND_SIZE);
+function generateRound(usedPokemonIds = []) {
+  return buildRound(usedPokemonIds).round;
+}
+
+function buildRound(usedPokemonIds = []) {
+  const { selected, nextUsedPokemonIds } = pickRoundPokemon(usedPokemonIds);
   const words = selected.map((pokemon) => ({ pokemonId: pokemon.id, text: pokemon.searchName }));
   const { grid, placements } = generateBoard(words);
   return {
-    gridSize: GRID_SIZE,
-    pokemonIds: selected.map((pokemon) => pokemon.id),
-    grid,
-    placements,
-    foundIds: [],
-    foundOrder: [],
-    completed: false,
-    awardedCompletion: false
+    round: {
+      gridSize: GRID_SIZE,
+      pokemonIds: selected.map((pokemon) => pokemon.id),
+      grid,
+      placements,
+      foundIds: [],
+      foundOrder: [],
+      completed: false,
+      awardedCompletion: false
+    },
+    nextUsedPokemonIds
+  };
+}
+
+function pickRoundPokemon(usedPokemonIds = []) {
+  const usedSet = new Set(usedPokemonIds.filter((id) => pokemonById.has(id)));
+  const unseen = GEN1_POKEMON.filter((pokemon) => !usedSet.has(pokemon.id));
+
+  if (unseen.length >= ROUND_SIZE) {
+    const selected = shuffle([...unseen]).slice(0, ROUND_SIZE);
+    return {
+      selected,
+      nextUsedPokemonIds: [...usedPokemonIds, ...selected.map((pokemon) => pokemon.id)]
+    };
+  }
+
+  const selected = shuffle([...unseen]);
+  const selectedIds = new Set(selected.map((pokemon) => pokemon.id));
+  const refillPool = GEN1_POKEMON.filter((pokemon) => !selectedIds.has(pokemon.id));
+  const refill = shuffle([...refillPool]).slice(0, ROUND_SIZE - selected.length);
+  const refillIds = refill.map((pokemon) => pokemon.id);
+
+  return {
+    selected: [...selected, ...refill],
+    nextUsedPokemonIds: refillIds
   };
 }
 
@@ -355,10 +408,15 @@ function renderBoard() {
     const col = Number(cell.dataset.col);
     const letter = state.round.grid[row][col];
     const key = `${row}:${col}`;
+    const animated = highlightedPokemonId !== null && state.round.placements.some((placement) => (
+      placement.pokemonId === highlightedPokemonId
+      && placement.cells.some(([placementRow, placementCol]) => placementRow === row && placementCol === col)
+    ));
     cell.textContent = letter;
     cell.setAttribute("aria-label", `Row ${row + 1} column ${col + 1} ${letter}`);
     cell.classList.toggle("found", foundCells.has(key));
     cell.classList.toggle("preview", previewCells.has(key));
+    cell.classList.toggle("success-flash", animated);
   });
 }
 
@@ -371,6 +429,7 @@ function renderFoundList() {
     const found = state.round.foundIds.includes(pokemonId);
     slot.className = found ? "sprite-slot" : "sprite-slot unfound";
     slot.setAttribute("aria-label", found ? `${pokemon.name} found` : `${pokemon.name} not found`);
+    slot.classList.toggle("success-flash", highlightedPokemonId === pokemonId);
 
     const sprite = document.createElement("img");
     sprite.className = "pokemon-sprite";
@@ -506,6 +565,7 @@ function markPokemonFound(pokemonId) {
 
   state.round.foundIds = [...state.round.foundIds, pokemonId];
   state.round.foundOrder = [...state.round.foundOrder, pokemonId];
+  triggerFoundAnimation(pokemonId);
   playCryForPokemon(pokemonId);
 
   if (state.round.foundIds.length === ROUND_SIZE) {
@@ -523,15 +583,35 @@ function markPokemonFound(pokemonId) {
   applyCompletionState();
 }
 
+function triggerFoundAnimation(pokemonId) {
+  highlightedPokemonId = pokemonId;
+  if (highlightTimer) {
+    clearTimeout(highlightTimer);
+  }
+  highlightTimer = window.setTimeout(() => {
+    highlightedPokemonId = null;
+    highlightTimer = null;
+    renderBoard();
+    renderFoundList();
+  }, 650);
+}
+
 function startNewRound() {
   stopCry();
   stopCelebration();
   stopMusic();
+  if (highlightTimer) {
+    clearTimeout(highlightTimer);
+    highlightTimer = null;
+  }
+  highlightedPokemonId = null;
   boardCells = [];
   activeSelection = null;
   pointerDown = false;
   activePointerId = null;
-  state.round = generateRound();
+  const { round, nextUsedPokemonIds } = buildRound(state.usedPokemonIds);
+  state.round = round;
+  state.usedPokemonIds = nextUsedPokemonIds;
   setMenuOpen(false);
   render();
   applyCompletionState();
@@ -541,6 +621,11 @@ function startNewRound() {
 function resetRound() {
   stopCry();
   stopCelebration();
+  if (highlightTimer) {
+    clearTimeout(highlightTimer);
+    highlightTimer = null;
+  }
+  highlightedPokemonId = null;
   activeSelection = null;
   pointerDown = false;
   activePointerId = null;
