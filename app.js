@@ -98,6 +98,7 @@ elements.musicToggle.addEventListener("change", () => {
 
 elements.gen1Toggle.addEventListener("change", () => {
   state.preferences.gen1Only = elements.gen1Toggle.checked;
+  state.usedPokemonIds = [];
   startNewRound();
 });
 
