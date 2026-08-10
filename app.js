@@ -205,10 +205,11 @@ function hydratePlacement(placement) {
 }
 
 function createInitialState() {
-  const { round, nextUsedPokemonIds } = buildRound();
+  const preferences = normalizePreferences();
+  const { round, nextUsedPokemonIds } = buildRound([], preferences.gen1Only);
   return {
     roundsCompleted: 0,
-    preferences: normalizePreferences(),
+    preferences,
     usedPokemonIds: nextUsedPokemonIds,
     round
   };
@@ -219,11 +220,11 @@ function saveState() {
 }
 
 function generateRound(usedPokemonIds = []) {
-  return buildRound(usedPokemonIds).round;
+  return buildRound(usedPokemonIds, state.preferences.gen1Only).round;
 }
 
-function buildRound(usedPokemonIds = []) {
-  const { selected, nextUsedPokemonIds } = pickRoundPokemon(usedPokemonIds);
+function buildRound(usedPokemonIds = [], gen1Only = false) {
+  const { selected, nextUsedPokemonIds } = pickRoundPokemon(usedPokemonIds, gen1Only);
   const words = selected.map((pokemon) => ({ pokemonId: pokemon.id, text: pokemon.searchName }));
   const { grid, placements } = generateBoard(words);
   return {
@@ -241,8 +242,8 @@ function buildRound(usedPokemonIds = []) {
   };
 }
 
-function pickRoundPokemon(usedPokemonIds = []) {
-  const pool = getCurrentPokemonPool(state.preferences.gen1Only);
+function pickRoundPokemon(usedPokemonIds = [], gen1Only = false) {
+  const pool = getCurrentPokemonPool(gen1Only);
   const poolIds = new Set(pool.map((pokemon) => pokemon.id));
   const usedSet = new Set(usedPokemonIds.filter((id) => poolIds.has(id)));
   const unseen = pool.filter((pokemon) => !usedSet.has(pokemon.id));
@@ -626,7 +627,7 @@ function startNewRound() {
   activeSelection = null;
   pointerDown = false;
   activePointerId = null;
-  const { round, nextUsedPokemonIds } = buildRound(state.usedPokemonIds);
+  const { round, nextUsedPokemonIds } = buildRound(state.usedPokemonIds, state.preferences.gen1Only);
   state.round = round;
   state.usedPokemonIds = nextUsedPokemonIds;
   setMenuOpen(false);
