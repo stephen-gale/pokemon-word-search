@@ -2,8 +2,9 @@
 
 ## 1. Core Gameplay
 
-- Each round contains exactly 4 random Pokemon from Generation 1.
-- Only Generation 1 Pokemon (National Dex #1-151) are used.
+- Each round contains exactly 4 random Pokemon.
+- The word search pool uses Pokemon with normalized search names of 10 letters or less.
+- A menu toggle allows the player to restrict the pool to Gen 1 only; when off, eligible Pokemon from all available generations are used.
 - Each selected Pokemon appears exactly once in the puzzle.
 - The puzzle is a word search grid containing all 4 selected Pokemon names.
 - Empty grid spaces are filled with random letters.
@@ -72,6 +73,7 @@ When a valid Pokemon is found:
 - Found Pokemon remain hidden until discovered.
 - Each found Pokemon replaces one placeholder with its sprite.
 - Found Pokemon remain visible for the duration of the round.
+- Tapping a sprite toggles a name overlay for that Pokemon.
 
 ## 5. Audio System
 
@@ -93,7 +95,8 @@ When a valid Pokemon is found:
 
 - The app includes a Menu.
 - The Menu blocks background interaction while open.
-- Menu contents: Rounds Completed counter, Mute cries toggle, Mute music toggle, New Round, Reset.
+- Menu contents: Rounds Completed counter, Mute cries toggle, Mute music toggle, Gen 1 only toggle, New Round, Reset.
+- Changing the Gen 1 only toggle resets the current round and immediately switches the selection pool.
 
 ### Rounds Completed Counter
 
@@ -138,6 +141,7 @@ Each Pokemon used by the app supports:
 - Normalized search name
 - Sprite asset
 - Cry asset
+- Inclusion only when the normalized search name is 10 letters or less
 
 ## 12. UI Integrity Rules
 

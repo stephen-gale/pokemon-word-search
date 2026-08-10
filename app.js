@@ -14,37 +14,20 @@ const DIRECTIONS = [
   { dr: -1, dc: 1 }
 ];
 
-const GEN1_NAMES = [
-  "Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise", "Caterpie",
-  "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate",
-  "Spearow", "Fearow", "Ekans", "Arbok", "Pikachu", "Raichu", "Sandshrew", "Sandslash", "Nidoran♀", "Nidorina",
-  "Nidoqueen", "Nidoran♂", "Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff",
-  "Zubat", "Golbat", "Oddish", "Gloom", "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett",
-  "Dugtrio", "Meowth", "Persian", "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag",
-  "Poliwhirl", "Poliwrath", "Abra", "Kadabra", "Alakazam", "Machop", "Machoke", "Machamp", "Bellsprout", "Weepinbell",
-  "Victreebel", "Tentacool", "Tentacruel", "Geodude", "Graveler", "Golem", "Ponyta", "Rapidash", "Slowpoke", "Slowbro",
-  "Magnemite", "Magneton", "Farfetch'd", "Doduo", "Dodrio", "Seel", "Dewgong", "Grimer", "Muk", "Shellder",
-  "Cloyster", "Gastly", "Haunter", "Gengar", "Onix", "Drowzee", "Hypno", "Krabby", "Kingler", "Voltorb",
-  "Electrode", "Exeggcute", "Exeggutor", "Cubone", "Marowak", "Hitmonlee", "Hitmonchan", "Lickitung", "Koffing", "Weezing",
-  "Rhyhorn", "Rhydon", "Chansey", "Tangela", "Kangaskhan", "Horsea", "Seadra", "Goldeen", "Seaking", "Staryu",
-  "Starmie", "Mr. Mime", "Scyther", "Jynx", "Electabuzz", "Magmar", "Pinsir", "Tauros", "Magikarp", "Gyarados",
-  "Lapras", "Ditto", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Porygon", "Omanyte", "Omastar", "Kabuto",
-  "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos", "Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo",
-  "Mew"
-];
+const ALL_POKEMON = POKEMON_DATA.map(([id, name]) => ({
+  id,
+  name,
+  searchName: normalizePokemonName(name),
+  sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`,
+  cry: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`
+}));
 
-const GEN1_POKEMON = GEN1_NAMES.map((name, index) => {
-  const id = index + 1;
-  return {
-    id,
-    name,
-    searchName: normalizePokemonName(name),
-    sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`,
-    cry: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`
-  };
-});
+const GEN1_POKEMON = ALL_POKEMON.filter((pokemon) => pokemon.id <= 151);
+const pokemonById = new Map(ALL_POKEMON.map((pokemon) => [pokemon.id, pokemon]));
 
-const pokemonById = new Map(GEN1_POKEMON.map((pokemon) => [pokemon.id, pokemon]));
+function getCurrentPokemonPool(gen1Only = false) {
+  return gen1Only ? GEN1_POKEMON : ALL_POKEMON;
+}
 
 const elements = {
   board: document.getElementById("board"),
@@ -56,6 +39,7 @@ const elements = {
   roundsCompleted: document.getElementById("rounds-completed"),
   criesToggle: document.getElementById("cries-toggle"),
   musicToggle: document.getElementById("music-toggle"),
+  gen1Toggle: document.getElementById("gen1-toggle"),
   newRoundButton: document.getElementById("new-round-button"),
   resetButton: document.getElementById("reset-button"),
   completionOverlay: document.getElementById("completion-overlay"),
@@ -112,6 +96,11 @@ elements.musicToggle.addEventListener("change", () => {
   saveState();
 });
 
+elements.gen1Toggle.addEventListener("change", () => {
+  state.preferences.gen1Only = elements.gen1Toggle.checked;
+  startNewRound();
+});
+
 elements.newRoundButton.addEventListener("click", () => startNewRound());
 elements.resetButton.addEventListener("click", () => resetRound());
 elements.completionNewRoundButton.addEventListener("click", () => startNewRound());
@@ -128,16 +117,18 @@ function normalizePokemonName(value) {
 }
 
 function normalizePreferences(preferences = {}) {
-  if ("criesMuted" in preferences || "musicMuted" in preferences) {
+  if ("criesMuted" in preferences || "musicMuted" in preferences || "gen1Only" in preferences) {
     return {
       criesMuted: Boolean(preferences.criesMuted),
-      musicMuted: Boolean(preferences.musicMuted)
+      musicMuted: Boolean(preferences.musicMuted),
+      gen1Only: Boolean(preferences.gen1Only)
     };
   }
 
   return {
     criesMuted: Boolean(preferences.muted),
-    musicMuted: "musicEnabled" in preferences ? !Boolean(preferences.musicEnabled) : false
+    musicMuted: "musicEnabled" in preferences ? !Boolean(preferences.musicEnabled) : false,
+    gen1Only: false
   };
 }
 
@@ -250,8 +241,10 @@ function buildRound(usedPokemonIds = []) {
 }
 
 function pickRoundPokemon(usedPokemonIds = []) {
-  const usedSet = new Set(usedPokemonIds.filter((id) => pokemonById.has(id)));
-  const unseen = GEN1_POKEMON.filter((pokemon) => !usedSet.has(pokemon.id));
+  const pool = getCurrentPokemonPool(state.preferences.gen1Only);
+  const poolIds = new Set(pool.map((pokemon) => pokemon.id));
+  const usedSet = new Set(usedPokemonIds.filter((id) => poolIds.has(id)));
+  const unseen = pool.filter((pokemon) => !usedSet.has(pokemon.id));
 
   if (unseen.length >= ROUND_SIZE) {
     const selected = shuffle([...unseen]).slice(0, ROUND_SIZE);
@@ -263,7 +256,7 @@ function pickRoundPokemon(usedPokemonIds = []) {
 
   const selected = shuffle([...unseen]);
   const selectedIds = new Set(selected.map((pokemon) => pokemon.id));
-  const refillPool = GEN1_POKEMON.filter((pokemon) => !selectedIds.has(pokemon.id));
+  const refillPool = pool.filter((pokemon) => !selectedIds.has(pokemon.id));
   const refill = shuffle([...refillPool]).slice(0, ROUND_SIZE - selected.length);
   const refillIds = refill.map((pokemon) => pokemon.id);
 
@@ -422,12 +415,15 @@ function renderFoundList() {
   elements.foundList.innerHTML = "";
 
   for (const pokemonId of state.round.pokemonIds) {
-    const slot = document.createElement("div");
     const pokemon = pokemonById.get(pokemonId);
     const found = state.round.foundIds.includes(pokemonId);
-    slot.className = found ? "sprite-slot" : "sprite-slot unfound";
-    slot.setAttribute("aria-label", found ? `${pokemon.name} found` : `${pokemon.name} not found`);
+    const slot = document.createElement("button");
+    slot.type = "button";
+    slot.classList.add("sprite-slot");
+    slot.classList.toggle("unfound", !found);
     slot.classList.toggle("success-flash", highlightedPokemonId === pokemonId);
+    slot.setAttribute("aria-label", `${pokemon.name} ${found ? "found" : "not found"}`);
+    slot.addEventListener("click", () => slot.classList.toggle("show-name"));
 
     const sprite = document.createElement("img");
     sprite.className = "pokemon-sprite";
@@ -435,7 +431,12 @@ function renderFoundList() {
     sprite.alt = `${pokemon.name} sprite`;
     sprite.loading = "lazy";
 
+    const nameOverlay = document.createElement("span");
+    nameOverlay.className = "sprite-label-overlay";
+    nameOverlay.textContent = pokemon.name;
+
     slot.appendChild(sprite);
+    slot.appendChild(nameOverlay);
     elements.foundList.appendChild(slot);
   }
 }
@@ -670,6 +671,7 @@ function isMenuOpen() {
 function syncAudioControls() {
   elements.criesToggle.checked = state.preferences.criesMuted;
   elements.musicToggle.checked = state.preferences.musicMuted;
+  elements.gen1Toggle.checked = state.preferences.gen1Only;
 }
 
 function handleFirstInteraction() {

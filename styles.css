@@ -200,6 +200,8 @@ button:hover {
 }
 
 .sprite-slot {
+  position: relative;
+  overflow: hidden;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -207,6 +209,33 @@ button:hover {
   border-radius: 14px;
   border: 2px solid rgba(43, 58, 33, 0.18);
   background: rgba(255, 251, 242, 0.8);
+  cursor: pointer;
+  text-align: center;
+}
+
+.sprite-slot .sprite-label-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  color: #fff;
+  background: rgba(28, 23, 14, 0.88);
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.sprite-slot.show-name .sprite-label-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sprite-slot.show-name .pokemon-sprite {
+  filter: blur(1px) brightness(0.7);
 }
 
 .sprite-slot.unfound {
